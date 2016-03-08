@@ -4,10 +4,14 @@ import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.animation.BounceInterpolator;
+import android.view.animation.Interpolator;
 import android.widget.TextView;
 
 import com.example.alyezz.parking.model.Sensor;
@@ -29,6 +33,7 @@ import com.google.maps.android.ui.IconGenerator;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -46,13 +51,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ArrayList<Sensor> sensors = new ArrayList<>();
     TextView tvSpaces;
     TextView tvTitle;
+    boolean inBlock = false;
+    boolean first = true;
     private int availablespaces = 0;
     private int availablespaces2 = 0;
     private int availablespaces3 = 0;
-    private int availablespaces4 = 17;
-    private int availablespaces5 = 26;
-    private int availablespaces6 = 31;
-    private int availablespaces7 = 35;
+    private int availablespaces4 = 0;
+    private int availablespaces5 = 0;
+    private int availablespaces6 = 0;
+    private int availablespaces7 = 0;
 
 
     @Override
@@ -74,8 +81,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
         LatLng guc = new LatLng(29.985115,31.441827);
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(guc));
-        mMap.moveCamera(CameraUpdateFactory.zoomTo((float) 17.6));
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(guc)      // Sets the center of the map to Mountain View
+                .zoom((float) 17.6)                   // Sets the zoom
+                .bearing((float) 0.7)                // Sets the orientation of the camera to east
+                .tilt(0)                   // Sets the tilt of the camera to 30 degrees
+                .build();                   // Creates a CameraPosition from the builder
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
 
         new Timer().scheduleAtFixedRate(new TimerTask() {
@@ -96,6 +108,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public boolean onMarkerClick(Marker marker) {
                         /////// change text below block name
+                        inBlock = true;
                         if (marker.equals(blocks.get(0))) {
                             tvTitle.setText("Block 1");
                             tvSpaces.setText(""+availablespaces + " Available Spaces");
@@ -123,8 +136,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     .tilt(0)                   // Sets the tilt of the camera to 30 degrees
                                     .build();                   // Creates a CameraPosition from the builder
                             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                            // showSpaces(1);
-                            //currentBlock = 1;
+                            showSpaces(1);
+                            currentBlock = 1;
                             return true;
                         }
 
@@ -139,8 +152,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     .tilt(0)                   // Sets the tilt of the camera to 30 degrees
                                     .build();                   // Creates a CameraPosition from the builder
                             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                            // showSpaces(2);
-                           // currentBlock = 2;
+                            showSpaces(2);
+                            currentBlock = 2;
                             return true;
                         }
 
@@ -155,8 +168,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     .tilt(0)                   // Sets the tilt of the camera to 30 degrees
                                     .build();                   // Creates a CameraPosition from the builder
                             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                            //  showSpaces(3);
-                           // currentBlock = 3;
+                            showSpaces(3);
+                            currentBlock = 3;
                             return true;
                         }
 
@@ -171,8 +184,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     .tilt(0)                   // Sets the tilt of the camera to 30 degrees
                                     .build();                   // Creates a CameraPosition from the builder
                             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                            //  showSpaces(4);
-                           // currentBlock = 4;
+                            showSpaces(4);
+                            currentBlock = 4;
                             return true;
                         }
 
@@ -187,8 +200,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     .tilt(0)                   // Sets the tilt of the camera to 30 degrees
                                     .build();                   // Creates a CameraPosition from the builder
                             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                            //  showSpaces(5);
-                           // currentBlock = 5;
+                            showSpaces(5);
+                            currentBlock = 5;
                             return true;
                         }
 
@@ -203,8 +216,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     .tilt(0)                   // Sets the tilt of the camera to 30 degrees
                                     .build();                   // Creates a CameraPosition from the builder
                             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                            //  showSpaces(6);
-                           // currentBlock = 6;
+                            showSpaces(6);
+                            currentBlock = 6;
                             return true;
                         }
                         return true;
@@ -213,9 +226,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         );
     }
 
+
     public void fillMarkers()
     {
-        mMap.clear();
+       // mMap.clear();
         blocks.clear();
         //// add change marker color
         IconGenerator redMarker = new IconGenerator(this);
@@ -223,7 +237,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         redMarker.setContentPadding(5, 0, 5, 0);
         IconGenerator greenMarker = new IconGenerator(this);
         greenMarker.setStyle(IconGenerator.STYLE_GREEN);
-        greenMarker.setContentPadding(5,0,5,0);
+        greenMarker.setContentPadding(5, 0, 5, 0);
         Bitmap iconBitmap;
         if (availablespaces>0)
         {
@@ -330,39 +344,269 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .icon(BitmapDescriptorFactory.fromBitmap(iconBitmap))));
         }
 
-        fillSpaces();
+        //fillSpaces();
     }
 
     public void fillSpaces()
     {
+        //if (inBlock)
+            mMap.clear();
         spaces.clear();
         ArrayList<Space> block = new ArrayList<>();
 
-        for (int i = 0; i< 4; i++)
+        for (int i = 0; i< sensors.size(); i++)
         {
             if (sensors.get(i).getValue() >0)
             {
-                block.add(new Space(new LatLng(29.985633, 31.440923 + 0.000032 * i), mMap.addMarker(new MarkerOptions()
-                        .position(new LatLng(29.985633, 31.440923 + 0.000032 * i))
+                block.add(new Space(new LatLng(29.985633, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.985633, 31.440923 + 0.000025 * i))
                         .visible(false)
-                        .rotation(90)
+                        .rotation((float) 90.7)
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
             }
             else
             {
-                block.add(new Space(new LatLng(29.985633, 31.440923 + 0.000032 * i), mMap.addMarker(new MarkerOptions()
-                        .position(new LatLng(29.985633, 31.440923 + 0.000032 * i))
+                block.add(new Space(new LatLng(29.985633, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.985633, 31.440923 + 0.000025 * i))
                         .visible(false)
-                        .rotation(90)
+                        .rotation((float)90.7)
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))), true));
             }
 
         }
 
         spaces.add(block);
-        tvTitle.setText("Guc Parking");
-        int temp = 109+availablespaces;
-        tvSpaces.setText(""+temp+" Available Spaces");
+///////////////////////////////block 2
+        block = new ArrayList<>();
+        for (int i = 0; i<34;i++)
+        {
+            block.add(new Space(new LatLng(29.985408, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(29.985408, 31.440923 + 0.000025 * i))
+                    .visible(false)
+                    .rotation((float)90.7)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+
+            block.add(new Space(new LatLng(29.985262, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(29.985262, 31.440923 + 0.000025 * i))
+                    .visible(false)
+                    .rotation((float)-90.7)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+        }
+        spaces.add(block);
+
+///////////////////////////////block 3
+        block = new ArrayList<>();
+        for (int i = 0; i<34;i++)
+        {
+            block.add(new Space(new LatLng(29.985183, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(29.985183, 31.440923 + 0.000025 * i))
+                    .visible(false)
+                    .rotation((float)90.7)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+
+            block.add(new Space(new LatLng(29.985033, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(29.985033, 31.440923 + 0.000025 * i))
+                    .visible(false)
+                    .rotation((float)-90.7)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+        }
+        spaces.add(block);
+
+///////////////////////////////block 4
+        availablespaces4 = 0;
+        block = new ArrayList<>();
+        for (int i = 0; i<34;i++)
+        {
+            Random rand = new Random();
+            int n = rand.nextInt(2);
+
+            if (n == 0)
+            {
+                block.add(new Space(new LatLng(29.984958, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984958, 31.440923 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+            }
+            else
+            {
+                availablespaces4++;
+                block.add(new Space(new LatLng(29.984958, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984958, 31.440923 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))), true));
+            }
+
+            n = rand.nextInt(2);
+
+            if (n == 0)
+            {
+                block.add(new Space(new LatLng(29.984807, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984807, 31.440923 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)-90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+            }
+            else
+            {
+                availablespaces4++;
+                block.add(new Space(new LatLng(29.984807, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984807, 31.440923 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)-90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))), true));
+            }
+
+        }
+        spaces.add(block);
+
+///////////////////////////////block 5
+        availablespaces5 = 0;
+        block = new ArrayList<>();
+        for (int i = 0; i<34;i++)
+        {
+            Random rand = new Random();
+            int n = rand.nextInt(2);
+
+            if (n == 0)
+            {
+                block.add(new Space(new LatLng(29.984729, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984729, 31.440923 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+            }
+            else
+            {
+                availablespaces5++;
+                block.add(new Space(new LatLng(29.984729, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984729, 31.440923 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))), true));
+            }
+
+            n = rand.nextInt(2);
+
+            if (n == 0)
+            {
+                block.add(new Space(new LatLng(29.984589, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984589, 31.440923 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)-90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+            }
+            else
+            {
+                availablespaces5++;
+                block.add(new Space(new LatLng(29.984589, 31.440923 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984589, 31.440923 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)-90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))), true));
+            }
+
+        }
+        spaces.add(block);
+
+///////////////////////////////block 6
+        availablespaces6 = 0;
+        block = new ArrayList<>();
+        for (int i = 0; i<35;i++)
+        {
+            Random rand = new Random();
+            int n = rand.nextInt(2);
+
+            if (n == 0)
+            {
+                block.add(new Space(new LatLng(29.984942, 31.441935 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984942, 31.441935 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)-90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+            }
+            else
+            {
+                availablespaces6++;
+                block.add(new Space(new LatLng(29.984942, 31.441935 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984942, 31.441935 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)-90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))), true));
+            }
+
+            n = rand.nextInt(2);
+
+            if (n == 0)
+            {
+                block.add(new Space(new LatLng(29.984802, 31.441935 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984802, 31.441935 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+            }
+            else
+            {
+                availablespaces6++;
+                block.add(new Space(new LatLng(29.984802, 31.441935 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984802, 31.441935 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))), true));
+            }
+
+        }
+        spaces.add(block);
+
+///////////////////////////////////block7
+        availablespaces7 = 0;
+        block = new ArrayList<>();
+        for (int i = 0; i<35;i++)
+        {
+            Random rand = new Random();
+            int n = rand.nextInt(2);
+
+            if (n == 0)
+            {
+                block.add(new Space(new LatLng(29.984718, 31.441935 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984718, 31.441935 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)-90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+            }
+            else
+            {
+                availablespaces7++;
+                block.add(new Space(new LatLng(29.984718, 31.441935 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984718, 31.441935 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)-90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))), true));
+            }
+
+            n = rand.nextInt(2);
+
+            if (n == 0)
+            {
+                block.add(new Space(new LatLng(29.984587, 31.441935 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984587, 31.441935 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))), true));
+            }
+            else
+            {
+                availablespaces7++;
+                block.add(new Space(new LatLng(29.984587, 31.441935 + 0.000025 * i), mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(29.984587, 31.441935 + 0.000025 * i))
+                        .visible(false)
+                        .rotation((float)90.7)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))), true));
+            }
+
+        }
+        spaces.add(block);
 
     }
 
@@ -370,7 +614,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     {
             for (int j = 0; j<spaces.get(x).size();j++)
             {
-               spaces.get(x).get(j).getMarker().setVisible(true);
+                spaces.get(x).get(j).getMarker().setVisible(true);
             }
     }
 
@@ -383,10 +627,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void showBlocks()
     {
-        for (int j = 0; j<blocks.size();j++)
+        if (first)
         {
-            blocks.get(j).setVisible(true);
-           // blocks.get(j).showInfoWindow();
+            for (int j = 0; j < blocks.size(); j++) {
+                dropPinEffect(blocks.get(j), 1500);
+                blocks.get(j).setVisible(true);
+                first = false;
+            }
+        }
+        else
+        {
+            for (int j = 0; j < blocks.size(); j++) {
+                dropPinEffect(blocks.get(j), 200);
+                blocks.get(j).setVisible(true);
+            }
         }
     }
 
@@ -405,11 +659,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         tvSpaces.setText(""+temp+" Available Spaces");
         //// could be any space not just 0;
         hideSpaces(currentBlock);
+        if (inBlock)
+        {
+            inBlock = false;
+            fillMarkers();
+        }
         showBlocks();
         CameraPosition cameraPosition = new CameraPosition.Builder()
                 .target(new LatLng(29.985115,31.441827))      // Sets the center of the map to Mountain View
                 .zoom((float) 17.6)                   // Sets the zoom
-                .bearing(0)                // Sets the orientation of the camera to east
+                .bearing((float) 0.7)                // Sets the orientation of the camera to east
                 .tilt(0)                   // Sets the tilt of the camera to 30 degrees
                 .build();                   // Creates a CameraPosition from the builder
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
@@ -442,6 +701,46 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 availablespaces++;
             }
         }
-        fillMarkers();
+        if (inBlock)
+        {
+            fillSpaces();
+            showSpaces(currentBlock);
+        }
+        else
+        {
+            tvTitle.setText("Guc Parking");
+            int temp = 109+availablespaces;
+            tvSpaces.setText(""+temp+" Available Spaces");
+            fillSpaces();
+            fillMarkers();
+            showBlocks();
+        }
+    }
+
+    private void dropPinEffect(final Marker marker,final long duration) {
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+        //final long duration = 200;
+
+        final Interpolator interpolator = new BounceInterpolator();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = Math.max(
+                        1 - interpolator.getInterpolation((float) elapsed
+                                / duration), 0);
+                marker.setAnchor(0.5f, 1.0f + 14 * t);
+
+                if (t > 0.0) {
+                    // Post again 15ms later.
+                    handler.postDelayed(this, 15);
+                } else {
+                    marker.showInfoWindow();
+
+                }
+            }
+        });
     }
 }

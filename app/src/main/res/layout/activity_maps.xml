@@ -27,7 +27,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="30 Available Spaces"
+        android:text="Waiting for server..."
         android:id="@+id/tvSpaces"
         android:layout_marginBottom="20dp"
         android:layout_marginLeft="25dp" />
