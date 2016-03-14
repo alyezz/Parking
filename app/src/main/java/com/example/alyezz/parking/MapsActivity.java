@@ -4,8 +4,11 @@ import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,8 +34,10 @@ import com.google.maps.android.ui.BubbleIconFactory;
 import com.google.maps.android.ui.IconGenerator;
 
 import java.lang.reflect.Array;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -41,10 +46,11 @@ import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, TextToSpeech.OnInitListener {
 
     private GoogleMap mMap;
 
+    private TextToSpeech tts;
     private int currentBlock = 0;
     private  ArrayList<ArrayList<Space>> spaces = new ArrayList<>();
     private ArrayList<Marker> blocks = new ArrayList<>();
@@ -60,6 +66,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private int availablespaces5 = 0;
     private int availablespaces6 = 0;
     private int availablespaces7 = 0;
+    boolean nearUni = false;
+    boolean nearParking = false;
 
 
     @Override
@@ -70,7 +78,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
+        tts = new TextToSpeech(this, this);
         tvSpaces = (TextView) findViewById(R.id.tvSpaces);
         tvTitle = (TextView) findViewById(R.id.tvTitle);
 
@@ -89,7 +97,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .build();                   // Creates a CameraPosition from the builder
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-
+        mMap.setMyLocationEnabled(true);
+        mMap.setOnMyLocationChangeListener(myLocationChangeListener);
         new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
@@ -607,11 +616,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }
         spaces.add(block);
+        int temp = availablespaces +availablespaces2 + availablespaces3 + availablespaces4 + availablespaces5 + availablespaces6+ availablespaces7;
+        tvSpaces.setText("" + temp + " Available Spaces");
 
     }
 
     public void showSpaces(int x)
     {
+        switch(x) {
+            case 0:
+                tvSpaces.setText(""+availablespaces + "Available Spaces");
+                break;
+            case 1:
+                tvSpaces.setText("" + availablespaces2+ "Available Spaces");
+                break;
+            case 2:
+                tvSpaces.setText(""+availablespaces3+ "Available Spaces");
+                break;
+            case 3:
+                tvSpaces.setText(""+availablespaces4+ "Available Spaces");
+                break;
+            case 4:
+                tvSpaces.setText(""+availablespaces5+ "Available Spaces");
+                break;
+            case 5:
+                tvSpaces.setText(""+availablespaces6+ "Available Spaces");
+                break;
+            case 6:
+                tvSpaces.setText(""+availablespaces7+ "Available Spaces");
+                break;
+            default:
+                break;
+        }
             for (int j = 0; j<spaces.get(x).size();j++)
             {
                 spaces.get(x).get(j).getMarker().setVisible(true);
@@ -709,8 +745,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         else
         {
             tvTitle.setText("Guc Parking");
-            int temp = 109+availablespaces;
-            tvSpaces.setText(""+temp+" Available Spaces");
+//            int temp = availablespaces +availablespaces2 + availablespaces3 + availablespaces4 + availablespaces5 + availablespaces6+ availablespaces7;
+//            tvSpaces.setText(""+temp+" Available Spaces");
             fillSpaces();
             fillMarkers();
             showBlocks();
@@ -743,4 +779,125 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
+
+
+    @Override
+    public void onDestroy() {
+        // Don't forget to shutdown!
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void onInit(int status) {
+        // TODO Auto-generated method stub
+
+        if (status == TextToSpeech.SUCCESS) {
+
+            int result = tts.setLanguage(Locale.US);
+
+            // tts.setPitch(5); // set pitch level
+
+            // tts.setSpeechRate(2); // set speech speed rate
+
+            if (result == TextToSpeech.LANG_MISSING_DATA
+                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "Language is not supported");
+            } else {
+               // speakOut();
+            }
+
+        } else {
+            Log.e("TTS", "Initilization Failed");
+        }
+
+    }
+
+    private void speakOut(String text) {
+
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+    }
+
+    private GoogleMap.OnMyLocationChangeListener myLocationChangeListener = new GoogleMap.OnMyLocationChangeListener() {
+        @Override
+        public void onMyLocationChange(Location location) {
+            LatLng loc = new LatLng(location.getLatitude(), location.getLongitude());
+            nearUni(loc);
+            nearParking(loc);
+        }
+    };
+
+
+    public void nearUni(LatLng location) {
+        LatLng loc = new LatLng(29.985115,31.441827);
+        float[] distance = new float[2];
+        Location.distanceBetween(location.latitude, location.longitude,
+                loc.latitude, loc.longitude, distance);
+
+        Log.d("DISTANCE", ""+ distance[0]);
+        if (distance[0] < 1500)
+        {
+            if (!nearUni && !sensors.isEmpty())
+            {
+                int Total = availablespaces +availablespaces2 + availablespaces3 + availablespaces4 + availablespaces5 + availablespaces6+ availablespaces7;
+                String text;
+                if (Total == 0)
+                {
+                    text = "There are no available spaces";
+                }
+                else
+                {
+                    text = "There are " + Total + " spaces available";
+                }
+                speakOut(text);
+                nearUni = true;
+            }
+        }
+    }
+
+    public void nearParking(LatLng location) {
+        LatLng loc = new LatLng(29.985115,31.441827);
+        float[] distance = new float[2];
+        Location.distanceBetween(location.latitude, location.longitude,
+                loc.latitude, loc.longitude, distance);
+
+        Log.d("DISTANCE", ""+ distance[0]);
+        if (distance[0] < 500)
+        {
+            if (!nearParking && !sensors.isEmpty())
+            {
+                int Total = availablespaces +availablespaces2 + availablespaces3 + availablespaces4 + availablespaces5 + availablespaces6+ availablespaces7;
+                String text;
+                if (Total == 0)
+                {
+                    text = "There are no available spaces";
+                }
+                else
+                {
+                    text = "There are spaces available in blocks";
+                    if (availablespaces >0)
+                        text += " 1," ;
+                    if (availablespaces2 >0)
+                        text += " 2," ;
+                    if (availablespaces3 >0)
+                        text += " 3," ;
+                    if (availablespaces4 >0)
+                        text += " 4," ;
+                    if (availablespaces5 >0)
+                        text += " 5," ;
+                    if (availablespaces6 >0)
+                        text += " 6," ;
+                    if (availablespaces7 >0)
+                        text += " 7," ;
+                }
+
+                speakOut(text);
+                nearParking = true;
+            }
+        }
+    }
+
 }
